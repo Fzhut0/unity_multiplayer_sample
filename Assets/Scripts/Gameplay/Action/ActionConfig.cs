@@ -16,6 +16,9 @@ namespace Unity.BossRoom.Gameplay.Actions
         [Tooltip("How much it costs in Mana to play this Action")]
         public int ManaCost;
 
+        [Tooltip("How often should aura perform it's own action")]
+        public float AuraTickSeconds;
+
         [Tooltip("How far the Action performer can be from the Target")]
         public float Range;
 

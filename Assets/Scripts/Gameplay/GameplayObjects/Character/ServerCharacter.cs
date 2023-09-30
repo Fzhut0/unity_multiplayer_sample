@@ -6,6 +6,7 @@ using Unity.BossRoom.Gameplay.Configuration;
 using Unity.BossRoom.Gameplay.GameplayObjects.Character.AI;
 using Unity.Multiplayer.Samples.BossRoom;
 using Unity.Netcode;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Action = Unity.BossRoom.Gameplay.Actions.Action;
@@ -54,6 +55,8 @@ namespace Unity.BossRoom.Gameplay.GameplayObjects.Character
         /// Indicates whether this character is in "stealth mode" (invisible to monsters and other players).
         /// </summary>
         public NetworkVariable<bool> IsStealthy { get; } = new NetworkVariable<bool>();
+
+        public NetworkVariable<bool> IsAuraRegenerating { get; } = new NetworkVariable<bool>();
 
         public NetworkHealthState NetHealthState { get; private set; }
 
@@ -232,7 +235,6 @@ namespace Unity.BossRoom.Gameplay.GameplayObjects.Character
                 // notify running actions that we're using a new attack. (e.g. so Stealth can cancel itself)
                 ActionPlayer.OnGameplayActivity(Action.GameplayActivity.UsingAttackAction);
             }
-
             PlayAction(ref data1);
         }
 
@@ -325,6 +327,62 @@ namespace Unity.BossRoom.Gameplay.GameplayObjects.Character
                 return;
             }
             NetManaState.ManaPoints.Value = manaStateValue - manaToConsume;
+        }
+
+        private void RestoreMana(int manaToRestore)
+        {
+            var manaStateValue = NetManaState.ManaPoints.Value;
+            if (manaStateValue == CharacterClass.BaseMana)
+            {
+                return;
+            }
+            NetManaState.ManaPoints.Value = manaStateValue + manaToRestore;
+        }
+
+        public void StartRegeneratingMana(float radius, int amountToRegenerate, float tickInterval) =>
+            StartCoroutine(RegenerateMana(radius, amountToRegenerate, tickInterval));
+
+        public void StopRegeneratingMana(float radius, int amountToRegenerate, float tickInterval) =>
+            StopCoroutine(RegenerateMana(radius, amountToRegenerate, tickInterval));
+
+        private bool CheckForNearbyPlayersForAura(float radius)
+        {
+            var auraRange = radius;
+            var auraRangeSqr = auraRange * auraRange;
+            var playerPos = physicsWrapper.Transform.position;
+
+            foreach (var player in PlayerServerCharacter.GetPlayerServerCharacters())
+            {
+                if (player == this)
+                {
+                    continue;
+                }
+                if ((player.physicsWrapper.Transform.position - playerPos).sqrMagnitude <= auraRangeSqr)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private IEnumerator RegenerateMana(float radius, int amountToRegenerate, float tickInterval)
+        {
+            var auraTickInterval = new WaitForSeconds(tickInterval);
+            while (IsAuraRegenerating.Value)
+            {
+                foreach (var player in PlayerServerCharacter.GetPlayerServerCharacters())
+                {
+                    if (player == this || player.ManaPoints == player.CharacterClass.BaseMana || !CheckForNearbyPlayersForAura(radius))
+                    {
+                        Debug.Log("continued iteration");
+                        continue;
+                    }
+
+                    player.RestoreMana(amountToRegenerate);
+                    Debug.Log("restored mana");
+                }
+                yield return auraTickInterval;
+            }
         }
 
         /// <summary>
