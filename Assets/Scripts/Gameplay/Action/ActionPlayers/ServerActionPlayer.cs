@@ -45,6 +45,11 @@ namespace Unity.BossRoom.Gameplay.Actions
         /// </summary>
         public void PlayAction(ref ActionRequestData action)
         {
+            if (m_ServerCharacter.ManaPoints == 0)
+            {
+                return;
+            }
+
             if (!action.ShouldQueue && m_Queue.Count > 0 &&
                 (m_Queue[0].Config.ActionInterruptible ||
                     m_Queue[0].Config.CanBeInterruptedBy(action.ActionID)))
@@ -171,6 +176,11 @@ namespace Unity.BossRoom.Gameplay.Actions
         /// </summary>
         private void StartAction()
         {
+            if (m_ServerCharacter.ManaPoints == 0)
+            {
+                return;
+            }
+
             if (m_Queue.Count > 0)
             {
                 float reuseTime = m_Queue[0].Config.ReuseTimeSeconds;
@@ -188,6 +198,7 @@ namespace Unity.BossRoom.Gameplay.Actions
 
                 m_Queue[0].TimeStarted = Time.time;
                 bool play = m_Queue[0].OnStart(m_ServerCharacter);
+                m_ServerCharacter.ConsumeMana(m_Queue[0].Config.ManaCost);
                 if (!play)
                 {
                     //actions that exited out in the "Start" method will not have their End method called, by design.

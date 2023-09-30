@@ -37,6 +37,9 @@ namespace Unity.BossRoom.Gameplay.UI
         private Slider[] m_PartyHealthSliders;
 
         [SerializeField]
+        private Slider[] m_PartyManaSliders;
+
+        [SerializeField]
         private Image[] m_PartyHealthGodModeImages;
 
         // track a list of hero (slot 0) + allies
@@ -107,6 +110,7 @@ namespace Unity.BossRoom.Gameplay.UI
             SetUIFromSlotData(0, m_OwnedServerCharacter);
 
             m_OwnedServerCharacter.NetHealthState.HitPoints.OnValueChanged += SetHeroHealth;
+            m_OwnedServerCharacter.NetManaState.ManaPoints.OnValueChanged += SetHeroMana;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             m_OwnedServerCharacter.NetLifeState.IsGodMode.OnValueChanged += SetHeroGodModeStatus;
@@ -121,6 +125,11 @@ namespace Unity.BossRoom.Gameplay.UI
         void SetHeroHealth(int previousValue, int newValue)
         {
             m_PartyHealthSliders[0].value = newValue;
+        }
+
+        void SetHeroMana(int previousValue, int newValue)
+        {
+            m_PartyManaSliders[0].value = newValue;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -163,6 +172,11 @@ namespace Unity.BossRoom.Gameplay.UI
                 SetAllyHealth(id, newValue);
             };
 
+            serverCharacter.NetManaState.ManaPoints.OnValueChanged += (int previousValue, int newValue) =>
+            {
+                SetAllyMana(id, newValue, serverCharacter);
+            };
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             serverCharacter.NetLifeState.IsGodMode.OnValueChanged += (value, newValue) =>
             {
@@ -176,6 +190,7 @@ namespace Unity.BossRoom.Gameplay.UI
         void SetUIFromSlotData(int slot, ServerCharacter serverCharacter)
         {
             m_PartyHealthSliders[slot].maxValue = serverCharacter.CharacterClass.BaseHP.Value;
+            m_PartyManaSliders[slot].maxValue = serverCharacter.CharacterClass.BaseMana;
             m_PartyHealthSliders[slot].value = serverCharacter.HitPoints;
             m_PartyNames[slot].text = GetPlayerName(serverCharacter);
 
@@ -209,6 +224,18 @@ namespace Unity.BossRoom.Gameplay.UI
             }
 
             m_PartyHealthSliders[slot].value = hp;
+        }
+
+        void SetAllyMana(ulong id, int mana, ServerCharacter serverCharacter)
+        {
+            int slot = FindOrAddAlly(id);
+            if (slot == -1)
+            {
+                return;
+            }
+
+            m_PartyHealthSliders[slot].maxValue = serverCharacter.CharacterClass.BaseMana;
+            m_PartyManaSliders[slot].value = mana;
         }
 
         private void OnHeroSelectionChanged(ulong prevTarget, ulong newTarget)
@@ -301,6 +328,7 @@ namespace Unity.BossRoom.Gameplay.UI
             if (m_OwnedServerCharacter && m_OwnedServerCharacter.NetHealthState)
             {
                 m_OwnedServerCharacter.NetHealthState.HitPoints.OnValueChanged -= SetHeroHealth;
+                m_OwnedServerCharacter.NetManaState.ManaPoints.OnValueChanged -= SetHeroMana;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 m_OwnedServerCharacter.NetLifeState.IsGodMode.OnValueChanged -= SetHeroGodModeStatus;
 #endif
@@ -332,6 +360,10 @@ namespace Unity.BossRoom.Gameplay.UI
                 serverCharacter.NetHealthState.HitPoints.OnValueChanged -= (int previousValue, int newValue) =>
                 {
                     SetAllyHealth(id, newValue);
+                };
+                serverCharacter.NetManaState.ManaPoints.OnValueChanged -= (int previousValue, int newValue) =>
+                {
+                    SetAllyMana(id, newValue, serverCharacter);
                 };
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 serverCharacter.NetLifeState.IsGodMode.OnValueChanged -= (value, newValue) =>

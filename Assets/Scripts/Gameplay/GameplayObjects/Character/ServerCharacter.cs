@@ -57,6 +57,8 @@ namespace Unity.BossRoom.Gameplay.GameplayObjects.Character
 
         public NetworkHealthState NetHealthState { get; private set; }
 
+        public NetworkManaState NetManaState { get; private set; }
+
         /// <summary>
         /// The active target of this character.
         /// </summary>
@@ -69,6 +71,12 @@ namespace Unity.BossRoom.Gameplay.GameplayObjects.Character
         {
             get => NetHealthState.HitPoints.Value;
             private set => NetHealthState.HitPoints.Value = value;
+        }
+
+        public int ManaPoints
+        {
+            get => NetManaState.ManaPoints.Value;
+            private set => NetManaState.ManaPoints.Value = value;
         }
 
         public NetworkLifeState NetLifeState { get; private set; }
@@ -146,6 +154,7 @@ namespace Unity.BossRoom.Gameplay.GameplayObjects.Character
             m_ServerActionPlayer = new ServerActionPlayer(this);
             NetLifeState = GetComponent<NetworkLifeState>();
             NetHealthState = GetComponent<NetworkHealthState>();
+            NetManaState = GetComponent<NetworkManaState>();
             m_State = GetComponent<NetworkAvatarGuidState>();
         }
 
@@ -169,6 +178,7 @@ namespace Unity.BossRoom.Gameplay.GameplayObjects.Character
                     PlayAction(ref startingAction);
                 }
                 InitializeHitPoints();
+                InitializeManaPoints();
             }
         }
 
@@ -255,6 +265,22 @@ namespace Unity.BossRoom.Gameplay.GameplayObjects.Character
             }
         }
 
+        private void InitializeManaPoints()
+        {
+            ManaPoints = CharacterClass.BaseMana;
+
+            if (IsNpc)
+            {
+                return;
+            }
+            var sessionPlayerData = SessionManager<SessionPlayerData>.Instance.GetPlayerData(OwnerClientId);
+            if (sessionPlayerData is { HasCharacterSpawned: true })
+            {
+                HitPoints = sessionPlayerData.Value.CurrentHitPoints;
+            }
+
+        }
+
         /// <summary>
         /// Play a sequence of actions!
         /// </summary>
@@ -289,6 +315,16 @@ namespace Unity.BossRoom.Gameplay.GameplayObjects.Character
             {
                 NetworkObject.Despawn(true);
             }
+        }
+
+        public void ConsumeMana(int manaToConsume)
+        {
+            var manaStateValue = NetManaState.ManaPoints.Value;
+            if (manaStateValue == 0 || manaStateValue < manaToConsume)
+            {
+                return;
+            }
+            NetManaState.ManaPoints.Value = manaStateValue - manaToConsume;
         }
 
         /// <summary>
