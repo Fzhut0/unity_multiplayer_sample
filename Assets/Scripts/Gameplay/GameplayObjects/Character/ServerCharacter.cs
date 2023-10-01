@@ -352,24 +352,11 @@ namespace Unity.BossRoom.Gameplay.GameplayObjects.Character
         public void StopRegeneratingMana(float radius, int amountToRegenerate, float tickInterval) =>
             StopCoroutine(RegenerateMana(radius, amountToRegenerate, tickInterval));
 
-        private bool CheckForNearbyPlayersForAura(float radius)
+        private bool CheckForNearbyPlayersForAura(float radius, ServerCharacter player)
         {
-            var auraRange = radius;
-            var auraRangeSqr = auraRange * auraRange;
+            var auraRangeSqr = radius * radius;
             var playerPos = physicsWrapper.Transform.position;
-
-            foreach (var player in PlayerServerCharacter.GetPlayerServerCharacters())
-            {
-                if (player == this)
-                {
-                    continue;
-                }
-                if ((player.physicsWrapper.Transform.position - playerPos).sqrMagnitude <= auraRangeSqr)
-                {
-                    return true;
-                }
-            }
-            return false;
+            return (player.physicsWrapper.Transform.position - playerPos).sqrMagnitude <= auraRangeSqr;
         }
 
         private IEnumerator RegenerateMana(float radius, int amountToRegenerate, float tickInterval)
@@ -379,7 +366,7 @@ namespace Unity.BossRoom.Gameplay.GameplayObjects.Character
             {
                 foreach (var player in PlayerServerCharacter.GetPlayerServerCharacters())
                 {
-                    if (player == this || player.ManaPoints == player.CharacterClass.BaseMana || !CheckForNearbyPlayersForAura(radius))
+                    if (/*player == this ||*/ player.ManaPoints == player.CharacterClass.BaseMana || !CheckForNearbyPlayersForAura(radius, player))
                     {
                         continue;
                     }

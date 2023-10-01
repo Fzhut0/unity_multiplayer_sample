@@ -45,14 +45,9 @@ namespace Unity.BossRoom.Gameplay.Actions
         /// </summary>
         public void PlayAction(ref ActionRequestData action)
         {
-            if (m_ServerCharacter.ManaPoints == 0)
-            {
-                return;
-            }
-
             if (!action.ShouldQueue && m_Queue.Count > 0 &&
                 (m_Queue[0].Config.ActionInterruptible ||
-                    m_Queue[0].Config.CanBeInterruptedBy(action.ActionID)))
+                 m_Queue[0].Config.CanBeInterruptedBy(action.ActionID)))
             {
                 ClearActions(false);
             }
@@ -65,6 +60,11 @@ namespace Unity.BossRoom.Gameplay.Actions
 
             var newAction = ActionFactory.CreateActionFromData(ref action);
             m_Queue.Add(newAction);
+            if (m_ServerCharacter.ManaPoints == 0 || (m_Queue.Count > 0 && m_Queue[0].Config.ManaCost > m_ServerCharacter.ManaPoints))
+            {
+                ClearActions(false);
+                return;
+            }
             if (m_Queue.Count == 1) { StartAction(); }
         }
 
@@ -176,7 +176,7 @@ namespace Unity.BossRoom.Gameplay.Actions
         /// </summary>
         private void StartAction()
         {
-            if (m_ServerCharacter.ManaPoints == 0)
+            if (m_ServerCharacter.ManaPoints == 0 || (m_Queue.Count > 0 && m_Queue[0].Config.ManaCost > m_ServerCharacter.ManaPoints))
             {
                 return;
             }
