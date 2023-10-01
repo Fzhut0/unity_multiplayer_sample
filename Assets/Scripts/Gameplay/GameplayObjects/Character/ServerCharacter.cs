@@ -336,6 +336,13 @@ namespace Unity.BossRoom.Gameplay.GameplayObjects.Character
             {
                 return;
             }
+
+            if (manaStateValue + manaToRestore > CharacterClass.BaseMana)
+            {
+                var recalculatedManaToRestore = manaToRestore - ((manaStateValue + manaToRestore) - CharacterClass.BaseMana);
+                NetManaState.ManaPoints.Value = manaStateValue + recalculatedManaToRestore;
+                return;
+            }
             NetManaState.ManaPoints.Value = manaStateValue + manaToRestore;
         }
 
