@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using Unity.BossRoom.Gameplay.GameplayObjects.Character;
-using Unity.BossRoom.VisualEffects;
 using UnityEngine;
 
 namespace Unity.BossRoom.Gameplay.Actions
@@ -24,7 +21,6 @@ namespace Unity.BossRoom.Gameplay.Actions
                 serverCharacter.StopRegeneratingMana(auraRadius, amountToRegenerate, tickInterval);
                 serverCharacter.IsAuraRegenerating.Value = false;
                 Cancel(serverCharacter);
-                Debug.Log("stopped restoring mana");
                 return false;
             }
             serverCharacter.clientCharacter.RecvDoActionClientRPC(Data);
@@ -53,14 +49,6 @@ namespace Unity.BossRoom.Gameplay.Actions
                 m_IsRegenAuraStarted = true;
             }
             return !m_IsRegenAuraEnded;
-        }
-
-        public override void Cancel(ServerCharacter serverCharacter)
-        {
-            if (!string.IsNullOrEmpty(Config.Anim2))
-            {
-                serverCharacter.serverAnimationHandler.NetworkAnimator.SetTrigger(Config.Anim2);
-            }
         }
 
         public override bool OnUpdateClient(ClientCharacter clientCharacter)

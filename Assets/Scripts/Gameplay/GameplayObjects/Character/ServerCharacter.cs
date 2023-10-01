@@ -374,12 +374,9 @@ namespace Unity.BossRoom.Gameplay.GameplayObjects.Character
                 {
                     if (player == this || player.ManaPoints == player.CharacterClass.BaseMana || !CheckForNearbyPlayersForAura(radius))
                     {
-                        Debug.Log("continued iteration");
                         continue;
                     }
-
                     player.RestoreMana(amountToRegenerate);
-                    Debug.Log("restored mana");
                 }
                 yield return auraTickInterval;
             }
