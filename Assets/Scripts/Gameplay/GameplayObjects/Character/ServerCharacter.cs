@@ -366,7 +366,7 @@ namespace Unity.BossRoom.Gameplay.GameplayObjects.Character
             {
                 foreach (var player in PlayerServerCharacter.GetPlayerServerCharacters())
                 {
-                    if (/*player == this ||*/ player.ManaPoints == player.CharacterClass.BaseMana || !CheckForNearbyPlayersForAura(radius, player))
+                    if (player.ManaPoints == player.CharacterClass.BaseMana || !CheckForNearbyPlayersForAura(radius, player))
                     {
                         continue;
                     }
